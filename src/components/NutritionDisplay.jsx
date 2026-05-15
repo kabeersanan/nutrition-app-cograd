@@ -1,3 +1,4 @@
+import React from 'react';
 import { Zap, Activity, Target } from 'lucide-react';
 
 export function LoadingState() {

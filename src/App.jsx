@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import ImageCapture from './components/ImageCapture';
 import { LoadingState, NutritionResult } from './components/NutritionDisplay';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 function App() {
-  const [, setImage] = useState(null);
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [nutritionData, setNutritionData] = useState(null);
   const [error, setError] = useState(null);
@@ -26,7 +24,7 @@ function App() {
       formData.append('file', blob, 'plate.jpg');
 
       // Send to your Python Backend
-      const response = await axios.post(`${API_URL}/analyze`, formData, {
+      const response = await axios.post('http://localhost:8000/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

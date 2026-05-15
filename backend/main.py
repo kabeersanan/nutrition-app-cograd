@@ -15,16 +15,9 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 app = FastAPI()
-# In backend/main.py
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://nutrition-app-cograd.vercel.app",
-        "http://localhost:5174", # Your current Vite port from the screenshot
-        "http://localhost:5173"  # Default Vite port just in case
-    ],
-    allow_credentials=True,
+    allow_origins=["*"], # In production, restrict this to your frontend URL
     allow_methods=["*"],
     allow_headers=["*"],
 )
