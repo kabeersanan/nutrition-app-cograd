@@ -1,5 +1,3 @@
-import React from 'react';
-import { Camera, Upload } from 'lucide-react';
 
 export default function ImageCapture({ onImageUpload }) {
   const handleFile = (e) => {
