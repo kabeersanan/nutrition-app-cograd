@@ -24,7 +24,7 @@ function App() {
       formData.append('file', blob, 'plate.jpg');
 
       // Send to your Python Backend
-      const response = await axios.post('https://nutrition-backend-nrya.onrender.com', formData, {
+      const response = await axios.post('https://nutrition-app-cograd.onrender.com', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
