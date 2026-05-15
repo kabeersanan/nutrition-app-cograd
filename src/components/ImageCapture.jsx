@@ -12,19 +12,37 @@ export default function ImageCapture({ onImageUpload }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50">
-      <Camera className="w-12 h-12 text-blue-500 mb-4" />
-      <p className="text-gray-600 mb-4 text-center">Snap your meal to see the gains</p>
-      <label className="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold cursor-pointer hover:bg-blue-700 transition">
-        Analyze Food
-        <input 
-          type="file" 
-          accept="image/*" 
-          capture="environment" 
-          className="hidden" 
-          onChange={handleFile} 
-        />
+    <div className="bg-white rounded-2xl shadow-md p-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        📷 Scan Your Food
+      </h2>
+
+      {/* Drag & drop zone */}
+      <label className="flex flex-col items-center justify-center w-full h-44
+                         border-2 border-dashed border-green-300 rounded-xl
+                         bg-green-50 hover:bg-green-100 cursor-pointer
+                         transition-colors duration-200">
+        <span className="text-4xl mb-2">🍎</span>
+        <span className="text-sm text-green-700 font-medium">
+          Click or drag an image here
+        </span>
+        <span className="text-xs text-gray-400 mt-1">PNG, JPG up to 10MB</span>
+        <input type="file" accept="image/*" className="hidden"
+               onChange={handleFile} />  {/* ✅ was onImageCapture, now handleFile */}
       </label>
+
+      {/* OR divider */}
+      <div className="flex items-center my-4 gap-3">
+        <hr className="flex-1 border-gray-200" />
+        <span className="text-xs text-gray-400 uppercase tracking-wide">or</span>
+        <hr className="flex-1 border-gray-200" />
+      </div>
+
+      <button className="w-full py-2.5 rounded-xl bg-green-600 text-white
+                          font-semibold text-sm hover:bg-green-700 active:scale-95
+                          transition-all duration-150 shadow-sm">
+        Use Camera
+      </button>
     </div>
   );
 }
