@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
@@ -22,19 +23,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model = genai.GenerativeModel('gemini-2.5-flash')
+# Using Flash for speed, requiring JSON output
+model = genai.GenerativeModel(
+    'gemini-2.5-flash',
+    generation_config={"response_mime_type": "application/json"},
+)
 
-#Schema Definition
+# 1. Schema Definition Updated for Phase 2
 class FoodItem(BaseModel):
     name: str
     portion: str
     calories: int
+    protein: int  # Added
+    carbs: int    # Added
+    fats: int     # Added
 
 class NutritionResponse(BaseModel):
     calories: int
     protein: int
     carbs: int
     fats: int
+    source_database: str  # Added for attribution
     items: List[FoodItem]
 
 # Inference Logic
@@ -45,24 +54,33 @@ async def root():
 @app.post("/analyze", response_model=NutritionResponse)
 async def analyze_plate(file: UploadFile = File(...)):
     # Validate file type
-    if not file.content_type.startswith("image/"):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
         image_data = await file.read()
-        
-        # System Prompt
+
+        # 2. Prompt Updated to demand per-item macros and database attribution
         prompt = """
         Analyze this food image. Provide a precise nutritional breakdown.
-        Return ONLY a JSON object with this exact structure:
+        Return ONLY a JSON object with this exact structure (all numeric fields must be integers, no decimals):
         {
-            "calories": total_number,
-            "protein": grams_number,
-            "carbs": grams_number,
-            "fats": grams_number,
-            "items": [{"name": "food name", "portion": "est. weight", "calories": number}]
+            "calories": total_integer,
+            "protein": grams_integer,
+            "carbs": grams_integer,
+            "fats": grams_integer,
+            "source_database": "Name of the reference database used (e.g., 'USDA FoodData Central' or 'NIN India')",
+            "items": [
+                {
+                    "name": "food name", 
+                    "portion": "est. weight", 
+                    "calories": integer,
+                    "protein": integer,
+                    "carbs": integer,
+                    "fats": integer
+                }
+            ]
         }
-        Do not include markdown formatting or extra text.
         """
 
         response = model.generate_content([
@@ -70,8 +88,30 @@ async def analyze_plate(file: UploadFile = File(...)):
             {"mime_type": file.content_type, "data": image_data}
         ])
 
-        #to structure the output-avoid having jason written at the end.
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(clean_json)
+        raw = (response.text or "").strip()
+        clean_json = raw.replace("```json", "").replace("```", "").strip()
+
+        try:
+            parsed = json.loads(clean_json)
+        except json.JSONDecodeError:
+            print(f"[analyze] Gemini returned non-JSON:\n{raw}")
+            raise HTTPException(status_code=502, detail="Model did not return valid JSON")
+
+        # 3. Enhanced Coercion Logic: Ensure no floats slip through to Pydantic
+        for key in ("calories", "protein", "carbs", "fats"):
+            if key in parsed and isinstance(parsed[key], float):
+                parsed[key] = int(round(parsed[key]))
+                
+        # Clean the nested items array as well
+        for item in parsed.get("items", []):
+            for macro in ("calories", "protein", "carbs", "fats"):
+                if macro in item and isinstance(item.get(macro), float):
+                    item[macro] = int(round(item[macro]))
+
+        return parsed
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
