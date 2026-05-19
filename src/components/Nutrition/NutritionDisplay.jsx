@@ -90,19 +90,26 @@ export function NutritionResult({ data }) {
         {/* Updated Breakdown: Now an interactive checklist */}
         <div className="space-y-2 mb-4">
           {items.map((item, i) => (
-            <label key={i} className="flex justify-between py-1.5 border-b last:border-0 text-sm cursor-pointer items-center group">
-              <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox" 
-                  checked={item.checked} 
+            <label key={i} className="flex justify-between py-2 border-b last:border-0 text-sm cursor-pointer items-start group">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
                   onChange={() => toggleItem(i)}
-                  className="rounded text-blue-500 w-4 h-4 cursor-pointer"
+                  className="rounded text-blue-500 w-4 h-4 cursor-pointer mt-0.5"
                 />
-                <span className={item.checked ? "text-gray-900" : "text-gray-400 line-through"}>
-                  {item.name} ({item.portion}) {item.isManual && <span className="text-xs font-medium text-blue-500 ml-1">Added</span>}
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className={item.checked ? "text-gray-900" : "text-gray-400 line-through"}>
+                    {item.name} ({item.portion}) {item.isManual && <span className="text-xs font-medium text-blue-500 ml-1">Added</span>}
+                  </span>
+                  <div className={`flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs ${item.checked ? "" : "opacity-40 line-through"}`}>
+                    <span className="text-red-500">Protein {item.protein ?? 0}g</span>
+                    <span className="text-green-600">Carbs {item.carbs ?? 0}g</span>
+                    <span className="text-orange-500">Fats {item.fats ?? 0}g</span>
+                  </div>
+                </div>
               </div>
-              <span className={`font-mono ${item.checked ? "text-gray-600" : "text-gray-300 line-through"}`}>
+              <span className={`font-mono whitespace-nowrap ml-2 ${item.checked ? "text-gray-600" : "text-gray-300 line-through"}`}>
                 {item.calories} cal
               </span>
             </label>

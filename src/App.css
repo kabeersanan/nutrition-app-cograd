@@ -182,3 +182,8 @@
     border-right-color: var(--border);
   }
 }
+.item-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.item-macros { display: flex; gap: 8px; font-size: 0.75rem; color: #666; }
+.macro-protein { color: #d97706; }
+.macro-carbs   { color: #2563eb; }
+.macro-fats    { color: #16a34a; }
