@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import ImageCapture from './components/ImageCapture';
-import { LoadingState, NutritionResult } from './components/NutritionDisplay';
+import ImageCapture from './components/ImageCapture/ImageCapture';
+import { LoadingState, NutritionResult } from './components/Nutrition/NutritionDisplay';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 function App() {
@@ -23,8 +23,11 @@ function App() {
       const formData = new FormData();
       formData.append('file', blob, 'plate.jpg');
 
-      // Send to your Python Backend
-      const response = await axios.post('http://localhost:8000/analyze', formData, {
+      // Use the live URL in Vercel, and localhost on your machine.
+      // Trim a trailing slash so `${API_BASE_URL}/analyze` never produces `//analyze`.
+      const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:10000").replace(/\/+$/, "");
+
+      const response = await axios.post(`${API_BASE_URL}/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

@@ -16,9 +16,16 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 app = FastAPI()
+origins = [
+    "https://nutrition-app-cograd.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your frontend URL
+    allow_origins=origins, 
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -37,30 +44,37 @@ class FoodItem(BaseModel):
     protein: int  # Added
     carbs: int    # Added
     fats: int     # Added
+    zinc_mg: int
+    calcium_mg: int
+    iron_mg: int
 
 class NutritionResponse(BaseModel):
     calories: int
     protein: int
     carbs: int
     fats: int
+    zinc_mg: int
+    calcium_mg: int
+    iron_mg: int
     source_database: str  # Added for attribution
     items: List[FoodItem]
 
-# Inference Logic
+
+# inference Logic
 @app.get("/")
 async def root():
     return {"message": "Nutrition App Backend is running!"}
 
 @app.post("/analyze", response_model=NutritionResponse)
 async def analyze_plate(file: UploadFile = File(...)):
-    # Validate file type
+    # validating file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
         image_data = await file.read()
 
-        # 2. Prompt Updated to demand per-item macros and database attribution
+        # prompt Updated to demand per-item macros and database attribution
         prompt = """
         Analyze this food image. Provide a precise nutritional breakdown.
         Return ONLY a JSON object with this exact structure (all numeric fields must be integers, no decimals):
@@ -69,7 +83,10 @@ async def analyze_plate(file: UploadFile = File(...)):
             "protein": grams_integer,
             "carbs": grams_integer,
             "fats": grams_integer,
-            "source_database": "Name of the reference database used (e.g., 'USDA FoodData Central' or 'NIN India')",
+            "zinc_mg": milligrams_integer,
+            "calcium_mg": milligrams_integer,
+            "iron_mg": milligrams_integer,
+            "source_database": "Name of the reference database used",
             "items": [
                 {
                     "name": "food name", 
@@ -77,7 +94,10 @@ async def analyze_plate(file: UploadFile = File(...)):
                     "calories": integer,
                     "protein": integer,
                     "carbs": integer,
-                    "fats": integer
+                    "fats": integer,
+                    "zinc_mg": integer,
+                    "calcium_mg": integer,
+                    "iron_mg": integer
                 }
             ]
         }
@@ -98,13 +118,13 @@ async def analyze_plate(file: UploadFile = File(...)):
             raise HTTPException(status_code=502, detail="Model did not return valid JSON")
 
         # 3. Enhanced Coercion Logic: Ensure no floats slip through to Pydantic
-        for key in ("calories", "protein", "carbs", "fats"):
+        # Update both loops to include the new keys
+        for key in ("calories", "protein", "carbs", "fats", "zinc_mg", "calcium_mg", "iron_mg"):
             if key in parsed and isinstance(parsed[key], float):
                 parsed[key] = int(round(parsed[key]))
                 
-        # Clean the nested items array as well
         for item in parsed.get("items", []):
-            for macro in ("calories", "protein", "carbs", "fats"):
+            for macro in ("calories", "protein", "carbs", "fats", "zinc_mg", "calcium_mg", "iron_mg"):
                 if macro in item and isinstance(item.get(macro), float):
                     item[macro] = int(round(item[macro]))
 
