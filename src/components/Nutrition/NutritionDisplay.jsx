@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Zap, Activity, Target } from 'lucide-react';
+import { Zap, Activity, Target, Check } from 'lucide-react';
+import { api } from '../../lib/api';
 
 //A. Loading State
 export function LoadingState() {
@@ -22,6 +23,11 @@ export function NutritionResult({ data }) {
   // Form state for adding missing items
   const [newItemName, setNewItemName] = useState('');
   const [newItemCals, setNewItemCals] = useState('');
+
+  // Logging state: 'idle' -> 'picking' (meal-type) -> 'saving' -> 'done'
+  const [logState, setLogState] = useState('idle');
+  const [logError, setLogError] = useState(null);
+  const [savedMealType, setSavedMealType] = useState(null);
 
   // 2. Dynamically calculate ALL macros based ONLY on checked items
   const activeItems = items.filter(item => item.checked);
@@ -58,6 +64,31 @@ export function NutritionResult({ data }) {
     
     setNewItemName('');
     setNewItemCals('');
+  };
+
+  // Save the currently-checked items (and their totals) under a meal type.
+  const logMeal = async (mealType) => {
+    setLogState('saving');
+    setLogError(null);
+    try {
+      await api.post('/meals', {
+        meal_type: mealType,
+        calories: currentCalories,
+        protein: currentProtein,
+        carbs: currentCarbs,
+        fats: currentFats,
+        zinc_mg: currentZinc,
+        calcium_mg: currentCalcium,
+        iron_mg: currentIron,
+        items: activeItems,
+      });
+      setSavedMealType(mealType);
+      setLogState('done');
+    } catch (err) {
+      console.error(err);
+      setLogError('Could not save. Is the backend running?');
+      setLogState('picking');
+    }
   };
 
   return (
@@ -138,9 +169,36 @@ export function NutritionResult({ data }) {
         </form>
       </div>
 
-      <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-sm hover:bg-gray-800 transition-colors">
-        Approve & Log Plate
-      </button>
+      {/* Log to meal history: idle -> pick a meal type -> saved confirmation */}
+      {logState === 'done' ? (
+        <div className="w-full py-3.5 bg-green-50 text-green-700 rounded-xl font-bold text-center flex items-center justify-center gap-2 capitalize">
+          <Check className="w-5 h-5" /> Logged as {savedMealType}
+        </div>
+      ) : logState === 'picking' || logState === 'saving' ? (
+        <div className="space-y-2">
+          <p className="text-sm text-center text-gray-500 font-medium">Log this plate as…</p>
+          <div className="grid grid-cols-4 gap-2">
+            {['breakfast', 'lunch', 'dinner', 'snack'].map((mt) => (
+              <button
+                key={mt}
+                disabled={logState === 'saving'}
+                onClick={() => logMeal(mt)}
+                className="py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-semibold capitalize hover:bg-gray-900 hover:text-white transition disabled:opacity-50"
+              >
+                {mt}
+              </button>
+            ))}
+          </div>
+          {logError && <p className="text-xs text-red-500 text-center">{logError}</p>}
+        </div>
+      ) : (
+        <button
+          onClick={() => setLogState('picking')}
+          className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-sm hover:bg-gray-800 transition-colors"
+        >
+          Approve & Log Plate
+        </button>
+      )}
 
       {/* Attribution Footer */}
       <div className="text-center text-xs text-gray-400 mt-2">
@@ -151,7 +209,7 @@ export function NutritionResult({ data }) {
 }
 
 //D. MacroCard for repetition
-function MacroCard({ label, value, unit, icon }) {
+export function MacroCard({ label, value, unit, icon }) {
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border flex flex-col items-center transition-all hover:shadow-md">
       {icon}
