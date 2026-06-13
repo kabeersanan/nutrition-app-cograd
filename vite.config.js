@@ -15,8 +15,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'MyThaali Macro Tracker',
-        short_name: 'MyThaali',
+        name: 'MacroVision Macro Tracker',
+        short_name: 'MacroVision',
         description: 'AI-powered plate analysis and precise macro tracking.',
         theme_color: '#ffffff',
         background_color: '#f3f4f6', 
